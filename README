@@ -1,0 +1,35 @@
+README
+
+This project is about generating an obstacle course from a set of points, each ov which has a set amount of obstacles.
+Obstacles can connect one point to another.
+The type of the obstacle determines which other points it can connect to:
+(Qouting from my assignment)
+
+Obstacle 1 Can be built from a point A to any other point on the same
+vertical or horizontal line as A.
+
+Obstacle 2 Can be built from a point A to the point furthest away from A (euclidean distance)
+If multiple points are equally far away, it can only be built to the first of these
+(ie. the first point in the order they come in the input)
+
+Obstacle 3 Can be built from a point A to any other point B if there are
+at least two other point in between A and B (ie. exactly on the line segment between A and B
+there must be at least 2 other points).
+
+Obstacle 4 Can be built from any zone directly to the end-zone.
+
+Start point is the first in the input, end point is the last.
+
+Find the maximum amount of paths from start to end by connecting the points with limited obstacles per point.
+Every obstacle connecting two points must only be used by one path.
+
+My solution:
+
+Look at the problem as a MaxFlow problem.
+I connect the every point to every other point that the obstacles at hand allow to, and set capacity on the directed edge to the amount of obstacles available.
+If one point can use the same obstacle to connect to more than one point, I make an imaginary point and mnake and edge to it with limited capacity, 
+then make edges out of it to the target obstacles with unlimited capacity. 
+Once I made the graph, I solve it with edmonds karp.
+
+The data structure for the graph is made of two distionaries, one for incoming edges for each point, one for outgiong edges.
+The index refers to the point (and the position) and the entry contains a dictionary of outgiong/incoming edges, index detaining point B and two other elements detailing flow and capacity.
