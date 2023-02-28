@@ -6,8 +6,8 @@ import sys
 IntPair = Tuple[int, int]
 sys.setrecursionlimit(5000)
  
-points={}
 
+points={}
 
 pointsIN={}
 pointsOUT={}
@@ -162,7 +162,8 @@ def makeGraph(startpoint):
                         if not(j in pointsOUT):
                             makeGraph(j)
                 
-                    
+
+# Get input from terminal              
 def inputGet():
     n = int(input())
     pp = {}

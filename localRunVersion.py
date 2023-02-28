@@ -20,7 +20,7 @@ times = []
 IntPair = Tuple[int, int]
 sys.setrecursionlimit(5000)
  
-#Example input points
+#Input points for simple example
 points={
 	"(0,1)"    :[0,1,4,0,2,0],
 	"(2,2)"    :[2,2,1,2,3,4],
