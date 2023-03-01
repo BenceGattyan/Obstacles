@@ -6,24 +6,31 @@ import sys
 IntPair = Tuple[int, int]
 sys.setrecursionlimit(5000)
  
-
+# contains all points and their obstacle data 
+# [x, y, number of obstacle 1 possibilities (o1), o2, o3, o4] 
 points={}
 
+# stores incoming and outgoing edge relations corresponding to obstacles between points
 pointsIN={}
 pointsOUT={}
 
+# does the same but in a different format
 pointsIN2={}
 pointsOUT2={}
 
+# start and end point
 source = ""
 sink = ""
 
+# counter for "imaginary" points
+# when an obstacle can be built to multiple other points an imaginary point is made with the limited
+# edge capacity, then edges are drawn to all destinations from there
+# this allows the maxFlow algirithm to figure out how to distribute the availabe obstacles after the edges are constructed
 x=1
 
-def normalized_slope(a: IntPair, b: IntPair) -> IntPair:
-    
+# find slope between two points a and b
+def normalized_slope(a: IntPair, b: IntPair) -> IntPair:  
     run = b[0] - a[0]
- 
     rise = b[1] - a[1]
     
     # disregard same point in slope calculation 
@@ -38,6 +45,7 @@ def normalized_slope(a: IntPair, b: IntPair) -> IntPair:
         rise // gcd_,
     )
  
+# returns all points sharing the same x or y axis as point
 def obstacle1(point: str) -> List[str]:
     destinations=[]
     pointCords = points[point][0:2]
@@ -54,6 +62,7 @@ def obstacle1(point: str) -> List[str]:
             
     return destinations
     
+# return furthest point
 def obstacle2(point: str) -> List[str]:
     pointCords = points[point][0:2]
     maxDist = 0
@@ -67,8 +76,10 @@ def obstacle2(point: str) -> List[str]:
             maxDist = dist
             destination = i
     
+    # return in list format so every obstacle method returns the same type
     return [destination]
 
+# return all points with at least one point inbetween our points
 def obstacle3(point: str) -> List[str]:
     # You need at least 3 points to potentially have non-collinear points.
     # For [0, 2] points, all points are on the same line.
@@ -82,12 +93,15 @@ def obstacle3(point: str) -> List[str]:
  
     a = tuple(points[point][0:2])
     # Fresh lines already have a, so default=1
+    # points found are stored in a dictionary, each list of points sharing a line have the slope as key
     slope_bois: DefaultDict[IntPair, List[str]] = defaultdict(lambda: [])
  
+    # for all points, append them to a list with the line leading to its' slope as key
     for b_index in points:
         b = tuple(points[b_index][0:2])
         slope_bois[normalized_slope(a, b)].append(b)
  
+    # sort all slopes' points by distance to self
     for i in slope_bois:
         if i[0]<0:
             slope_bois[i] = sorted(slope_bois[i],key=lambda tup: tup[0], reverse=True)
@@ -98,8 +112,8 @@ def obstacle3(point: str) -> List[str]:
         else:
             slope_bois[i] = sorted(slope_bois[i],key=lambda tup: tup[1], reverse=False)
 
+    # add all points that satisfy criteria for obstacle 3 to destinations
     for i in slope_bois.values():
-        
         if len(i)>2:         
             i = [str(j).replace(" ", "") for j in i]
             destinations.extend(i[2:])
@@ -125,11 +139,12 @@ def makeGraph(startpoint):
             if 0<len(i[0]): #and nodes to build them to
                 if len(i[0])==1: #single target
                     #print(i[0][0])
+                    # save outgoing edge
                     try:
                         pointsOUT[startpoint].append([i[0][0],0,i[1]])                         
                     except KeyError:
                         pointsOUT[startpoint] = [[i[0][0],0,i[1]]]
-                        
+                    # save incoming edge for the target
                     try:
                         pointsIN[str(i[0][0])].append([startpoint,0,i[1]])
                     except KeyError:
@@ -139,6 +154,7 @@ def makeGraph(startpoint):
                         makeGraph(str(i[0][0]))
                         
                 else: #multi target
+                    # make an imaginary point
                     try:
                         pointsOUT[startpoint].append(["(x{})".format(x),0,i[1]])
                             
@@ -148,6 +164,8 @@ def makeGraph(startpoint):
                     pointsIN["(x{})".format(x)] = [[startpoint,0,i[1]]]
                     
                     pointsOUT["(x{})".format(x)] = []
+                    
+                    # make edges from imaginary point to all targets
                     for j in i[0]:
                         pointsOUT["(x{})".format(x)].append([j,0,i[1]])
                         
@@ -155,9 +173,10 @@ def makeGraph(startpoint):
                             pointsIN[j].append(["(x{})".format(x),0,i[1]])
                         except KeyError:
                             pointsIN[j] = [["(x{})".format(x),0,i[1]]]
-                        
+                    # increase imaginary point counter
                     x+=1
                     
+                    # for all targets, if target has no outgoing edges, construct graph from target
                     for j in i[0]:
                         if not(j in pointsOUT):
                             makeGraph(j)
@@ -180,6 +199,7 @@ def ajacencyConversion():
     
     #pain train choo-choo
     #gotta change the entire ajacency list to support double indexing by coords
+    # this is needed to help identify edges leading into and out of self when edmondsKarp is running
     entries = {}
     for entry in list(pointsOUT):   #pointsOUT
         edges = {}
@@ -279,10 +299,14 @@ def reconstructPath(s, e, prev):
         return path
     return []
 
+# breadth first search
 def BFS(s, e):
     prev = solve(s)
     return reconstructPath(s, e, prev)
 
+# edmonds karp solves max flow by using breadth first search for a possible path from source to sink
+# path can be made on an edge with unused capacity, or in reverse direction by decreasing flow on edge (graph only has directed edges)
+# once path is found maximise flow through it, then find a new path until no new paths can be made
 def edmondsKarp(s,e):
 
     path = BFS(s,e)
@@ -320,7 +344,7 @@ def edmondsKarp(s,e):
                     pointsIN2[i[0]][prev[0]][0] += flow
                     pointsIN2[i[0]][prev[0]][1] -= flow
                     
-                else:
+                else: # path reverse direction
                     pointsIN2[prev[0]][i[0]][0] -= flow
                     pointsIN2[prev[0]][i[0]][1] += flow
                     
@@ -342,6 +366,9 @@ points = inputGet()
 source = list(points)[0] #will change later to avoid making list every time
 sink = list(points)[-1] #will change later to avoid making list every time
 
+# make directed graph corresponding to possible arrangements of obstacles
 makeGraph(source)
+# convert data structure for easier solve
 ajacencyConversion()
+# maximize flow, return max flow
 print(edmondsKarp(source,sink))
