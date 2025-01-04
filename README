@@ -5,13 +5,13 @@ Obstacles can connect one point to another.
 The type of the obstacle determines which other points it can connect to.
 Find the maximum amount of paths from start to end by connecting the points with limited obstacles per point.
 Every obstacle connecting two points must only be used by one path.
+(The problems come form a uni assignment)
 
 The points and respective obstacle info is given in input by CodeJudge upon testing.
 Obstacles.py is the version submitted for the test and is cleaner to read.
 localRunVersion.py can run by itself as it has the points.
 
 Obstacles explained:
-(Quoting from my assignment)
 
 Obstacle 1 Can be built from a point A to any other point on the same
 vertical or horizontal line as A.
